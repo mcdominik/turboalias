@@ -25,7 +25,6 @@ class ShellIntegration:
             return None
 
         shell_name = Path(shell_path).name
-        print(shell_name)
         if shell_name == "bash":
             return SupportedShell.BASH
         elif shell_name == "zsh":
@@ -166,12 +165,15 @@ class ShellIntegration:
         # Escape double quotes and backslashes
         return command.replace('\\', '\\\\').replace('"', '\\"')
 
-    def import_existing_aliases(self) -> Dict[str, str]:
+    def import_existing_aliases(self, shell: SupportedShell) -> Dict[str, str]:
         """Import aliases from current shell"""
         try:
+            # Get shell name
+            shell_name = shell.value if isinstance(shell, SupportedShell) else shell
+            
             # Try to get aliases from current shell
             result = subprocess.run(
-                ['bash', '-i', '-c', 'alias'],
+                [shell_name, '-i', '-c', 'alias'],
                 capture_output=True,
                 text=True,
                 timeout=5

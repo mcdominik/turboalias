@@ -21,8 +21,6 @@ class TurboaliasCLI:
 
     def init(self):
         """Initialize turboalias"""
-        print("🔧 Initializing turboalias...")
-
         shell = self.shell.detect_shells()
 
         if not shell:
@@ -30,24 +28,62 @@ class TurboaliasCLI:
             print("   Please create ~/.bashrc or ~/.zshrc first")
             return 1
 
+        # Check if already initialized
+        rc_file = self.shell.get_shell_rc_file(shell)
+        aliases_file_exists = self.config.shell_file.exists()
+        
         if self.shell.add_source_line(shell):
-            rc_file = self.shell.get_shell_rc_file(shell)
+            # First time setup
+            print("🔧 Initializing turboalias...")
             print(f"✓ Added turboalias to {rc_file}")
-            added = True
+            
+            # Generate initial aliases file
+            self.shell.generate_aliases_file()
+            print(f"✓ Created {self.config.shell_file}")
+            
+            # Prompt to import existing aliases
+            print("\n📥 Import your existing shell aliases?")
+            response = input("   (Y/n) [default: yes]: ").strip().lower()
+            
+            imported = 0
+            if response in ['', 'y', 'yes']:
+                existing = self.shell.import_existing_aliases(shell)
+                
+                if existing:
+                    # Show preview
+                    preview_count = min(3, len(existing))
+                    for i, (name, command) in enumerate(list(existing.items())[:preview_count]):
+                        print(f"   • {name} = '{command}'")
+                    
+                    if len(existing) > preview_count:
+                        print(f"   ... and {len(existing) - preview_count} more")
+                    
+                    # Import them
+                    for name, command in existing.items():
+                        if self.config.add_alias(name, command):
+                            imported += 1
+                    
+                    self.shell.generate_aliases_file()
+                
+                print(f"   ✓ Imported {imported} aliases")
+            else:
+                print("   ✓ Skipped import")
+            
+            print(f"\n⚡ Please reload your shell: {self.shell.reload_shell_message()}")
+            print("✨ Then turboalias will be ready to use!")
         else:
-            rc_file = self.shell.get_shell_rc_file(shell)
-            print(f"✓ Turboalias already configured in {rc_file}")
-            added = False
-
-        # Generate initial aliases file
-        self.shell.generate_aliases_file()
-        print(f"✓ Created {self.config.shell_file}")
-
-        if added:
-            print(
-                f"\n⚡ Please reload your shell: {self.shell.reload_shell_message()}")
-
-        print("\n✨ Turboalias is ready! Try: turboalias add ll 'ls -lah'")
+            # Already initialized
+            print("✨ Turboalias is already initialized!")
+            print(f"   Shell config: {rc_file}")
+            print(f"   Aliases file: {self.config.shell_file}")
+            
+            # Regenerate aliases file in case it was deleted
+            if not aliases_file_exists:
+                self.shell.generate_aliases_file()
+                print("\n✓ Regenerated missing aliases file")
+            
+            print("\n💡 Ready to use! Try: turboalias add ll 'ls -lah'")
+        
         return 0
 
     def add(self, name: str, command: str, category: Optional[str] = None):
@@ -140,7 +176,8 @@ class TurboaliasCLI:
         """Import existing aliases from shell"""
         print("🔍 Scanning for existing aliases...")
 
-        existing = self.shell.import_existing_aliases()
+        shell = self.shell.detect_shells()
+        existing = self.shell.import_existing_aliases(shell)
 
         if not existing:
             print("No new aliases found to import")
@@ -206,57 +243,168 @@ class TurboaliasCLI:
             print(f"❌ Failed to open editor: {e}")
             return 1
 
+    def nuke(self):
+        """Completely remove turboalias configuration"""
+        print("💣 This will completely remove turboalias from your system:")
+        print("   • Remove turboalias from shell config")
+        print("   • Delete all aliases")
+        print(f"   • Delete {self.config.config_dir}")
+        
+        response = input("\n⚠️  Are you absolutely sure? (y/N) [default: no]: ").strip().lower()
+        
+        if response not in ['y', 'yes']:
+            print("Nuke cancelled - nothing was removed")
+            return 0
+        
+        shell = self.shell.detect_shells()
+        removed_items = []
+        
+        # Remove from shell config
+        if shell:
+            rc_file = self.shell.get_shell_rc_file(shell)
+            if rc_file.exists():
+                try:
+                    with open(rc_file, 'r') as f:
+                        lines = f.readlines()
+                    
+                    # Filter out turboalias lines
+                    new_lines = []
+                    skip_until_end = False
+                    
+                    for line in lines:
+                        if '# turboalias aliases' in line:
+                            skip_until_end = True
+                            continue
+                        
+                        if skip_until_end:
+                            # Skip until we find the closing brace of the function
+                            if line.strip() == '}':
+                                skip_until_end = False
+                            continue
+                        
+                        # Skip individual turboalias source lines
+                        if 'turboalias' in line and ('source' in line or 'turboalias()' in line):
+                            continue
+                        
+                        new_lines.append(line)
+                    
+                    with open(rc_file, 'w') as f:
+                        f.writelines(new_lines)
+                    
+                    removed_items.append(f"Removed turboalias from {rc_file}")
+                except Exception as e:
+                    print(f"⚠️  Warning: Could not clean {rc_file}: {e}")
+        
+        # Remove config directory
+        if self.config.config_dir.exists():
+            try:
+                import shutil
+                shutil.rmtree(self.config.config_dir)
+                removed_items.append(f"Deleted {self.config.config_dir}")
+            except Exception as e:
+                print(f"⚠️  Warning: Could not remove {self.config.config_dir}: {e}")
+        
+        if removed_items:
+            print("\n✓ Turboalias has been removed:")
+            for item in removed_items:
+                print(f"  • {item}")
+            print("\n⚡ Please reload your shell to complete removal")
+        else:
+            print("\n✓ Turboalias was not found on this system")
+        
+        return 0
+
 
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="Turboalias - Cross-workstation alias manager",
+        prog='turboalias',
+        description='🚀 Turboalias - Cross-workstation alias manager for bash and zsh',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  turboalias init                           Initialize turboalias
-  turboalias add ll 'ls -lah'               Add an alias
-  turboalias add gst 'git status' --category git    Add with category
-  turboalias remove ll                      Remove an alias
-  turboalias list                           List all aliases
-  turboalias list --category git            List aliases in category
-  turboalias categories                     List all categories
-  turboalias import                         Import existing aliases
-  turboalias clear                          Clear all aliases
-  turboalias edit                           Edit config file
+            ✨ Examples:
+            turboalias init                                 Get started with turboalias
+            turboalias add ll 'ls -lah'                     Create a simple alias
+            turboalias add gst 'git status' -c git          Add alias with category
+            turboalias remove ll                            Remove an alias
+            turboalias list                                 Show all your aliases
+            turboalias list -c git                          Show aliases in a category
+            turboalias categories                           View all categories
+            turboalias import                               Import your existing aliases
+            turboalias clear                                Remove all aliases
+            turboalias edit                                 Edit config in $EDITOR
+            turboalias nuke                                 Completely remove turboalias
+
+            💡 Tip: Changes apply instantly - no shell reload needed!
+
+            📖 Documentation: https://github.com/mcdominik/turboalias
         """
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to run')
+    subparsers = parser.add_subparsers(
+        dest='command',
+        metavar='<command>',
+        help='Available commands'
+    )
 
     # init
-    subparsers.add_parser('init', help='Initialize turboalias')
+    subparsers.add_parser(
+        'init',
+        help='🔧 Set up turboalias in your shell'
+    )
 
     # add
-    add_parser = subparsers.add_parser('add', help='Add a new alias')
-    add_parser.add_argument('name', help='Alias name')
-    add_parser.add_argument('cmd', help='Command to alias')
-    add_parser.add_argument('--category', '-c', help='Category for the alias')
+    add_parser = subparsers.add_parser(
+        'add',
+        help='➕ Create a new alias'
+    )
+    add_parser.add_argument('name', help='Name for your alias')
+    add_parser.add_argument('cmd', help='Command to run')
+    add_parser.add_argument('--category', '-c', help='Optional category (git, docker, etc.)')
 
     # remove
-    remove_parser = subparsers.add_parser('remove', help='Remove an alias')
-    remove_parser.add_argument('name', help='Alias name')
+    remove_parser = subparsers.add_parser(
+        'remove',
+        help='🗑️  Delete an alias'
+    )
+    remove_parser.add_argument('name', help='Alias to remove')
 
     # list
-    list_parser = subparsers.add_parser('list', help='List aliases')
+    list_parser = subparsers.add_parser(
+        'list',
+        help='📋 Show your aliases'
+    )
     list_parser.add_argument('--category', '-c', help='Filter by category')
 
     # categories
-    subparsers.add_parser('categories', help='List all categories')
+    subparsers.add_parser(
+        'categories',
+        help='📁 View all categories'
+    )
 
     # import
-    subparsers.add_parser('import', help='Import existing aliases')
+    subparsers.add_parser(
+        'import',
+        help='📥 Import aliases from your shell'
+    )
 
     # clear
-    subparsers.add_parser('clear', help='Clear all aliases')
+    subparsers.add_parser(
+        'clear',
+        help='🧹 Remove all aliases'
+    )
 
     # edit
-    subparsers.add_parser('edit', help='Edit config file')
+    subparsers.add_parser(
+        'edit',
+        help='✏️  Edit config file directly'
+    )
+
+    # nuke
+    subparsers.add_parser(
+        'nuke',
+        help='💣 Completely remove turboalias'
+    )
 
     args = parser.parse_args()
 
@@ -283,6 +431,8 @@ Examples:
             return cli.clear()
         elif args.command == 'edit':
             return cli.edit()
+        elif args.command == 'nuke':
+            return cli.nuke()
     except KeyboardInterrupt:
         print("\n\nCancelled")
         return 130
