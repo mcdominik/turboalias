@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "turboalias-aliases"
+name = "turboalias"
 version = "0.1.0"
 description = "Cross-workstation alias manager for bash and zsh"
 readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Your Name", email = "ddominik.mackiewicz@gmail.com"}
 ]
 keywords = ["alias", "aliases", "bash", "zsh", "shell", "terminal"]
 classifiers = [
@@ -24,11 +24,14 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+
 ]
 
 [project.scripts]
 turboalias = "turboalias.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/turboalias"
-"Bug Tracker" = "https://github.com/yourusername/turboalias/issues"
+Homepage = "https://github.com/mcdominik/turboalias"
+"Bug Tracker" = "https://github.com/mcdominik/turboalias/issues"
