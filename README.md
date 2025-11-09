@@ -64,33 +64,11 @@ turboalias add gco 'git checkout' --category git
 turboalias add dps 'docker ps' --category docker
 ```
 
-**3. Reload your shell**
+**3. Use your aliases!**
 
 ```bash
-source ~/.bashrc  # or ~/.zshrc
-```
-
-**1. Initialize turboalias**
-
-```bash
-turboalias init
-source ~/.bashrc  # or ~/.zshrc (one-time setup)
-```
-
-**2. Add some aliases**
-
-```bash
-turboalias add ll 'ls -lah'
-turboalias add gst 'git status' --category git
-turboalias add gco 'git checkout' --category git
-turboalias add dps 'docker ps' --category docker
-```
-
-**3. Use your aliases immediately!**
-
-```bash
-ll        # works right away!
-gst       # no reload needed!
+ll
+gst
 ```
 
 ---
@@ -103,7 +81,7 @@ gst       # no reload needed!
 turboalias init
 ```
 
-Sets up turboalias and adds a wrapper function to your `.bashrc`/`.zshrc`. **Note:** You'll need to reload your shell once after initial setup (`source ~/.bashrc` or `source ~/.zshrc`).
+Sets up turboalias and adds sourcing to your `.bashrc`/`.zshrc`. Reload your shell to activate: `source ~/.bashrc` (or `~/.zshrc`)
 
 ### Add an alias
 
@@ -117,8 +95,6 @@ turboalias add <name> <command> [--category <category>]
 turboalias add ll 'ls -lah'
 turboalias add gst 'git status' -c git
 ```
-
-⚡ **Changes apply instantly!** No need to reload your shell after adding aliases.
 
 ### Remove an alias
 
@@ -156,7 +132,7 @@ turboalias categories
 turboalias import
 ```
 
-Scans your current shell for aliases and imports them into turboalias. Changes apply instantly!
+Scans your current shell for aliases and imports them into turboalias
 
 ### Clear all aliases
 
@@ -164,7 +140,7 @@ Scans your current shell for aliases and imports them into turboalias. Changes a
 turboalias clear
 ```
 
-Removes all turboalias-managed aliases (with confirmation). Changes apply instantly!
+Removes all turboalias-managed aliases (with confirmation)
 
 ### Edit config directly
 
@@ -172,7 +148,7 @@ Removes all turboalias-managed aliases (with confirmation). Changes apply instan
 turboalias edit
 ```
 
-Opens the config file in your `$EDITOR` (defaults to nano). Changes apply instantly after saving!
+Opens the config file in your `$EDITOR` (defaults to nano)
 
 ---
 
@@ -184,12 +160,6 @@ Turboalias stores its configuration in `~/.config/turboalias/`:
 | -------------- | ---------------------------------------------- |
 | `aliases.json` | Your aliases and categories                    |
 | `aliases.sh`   | Generated shell script (sourced by your shell) |
-
-### How Auto-Reload Works
-
-Turboalias installs a wrapper function in your shell configuration that automatically reloads aliases after you make changes. When you run commands like `turboalias add`, `turboalias remove`, or `turboalias edit`, the wrapper function detects this and sources the updated aliases file automatically.
-
-This means you only need to reload your shell once during initial setup - after that, all changes apply instantly! 🚀
 
 ### Config file format
 
