@@ -33,9 +33,8 @@ Turboalias is a simple, powerful tool to manage your shell aliases across multip
 
 ### Via pip (recommended)
 
-```bash
-pip install turboalias-aliases
-```
+````bash
+pip install turboalias
 
 ### From source
 
@@ -43,7 +42,7 @@ pip install turboalias-aliases
 git clone https://github.com/mcdominik/turboalias.git
 cd turboalias
 pip install -e .
-```
+````
 
 ---
 
@@ -62,6 +61,8 @@ turboalias add ll 'ls -lah'
 turboalias add gst 'git status' --category git
 turboalias add gco 'git checkout' --category git
 turboalias add dps 'docker ps' --category docker
+turboalias add hg 'history | grep'
+
 ```
 
 **3. Use your aliases!**
@@ -69,6 +70,8 @@ turboalias add dps 'docker ps' --category docker
 ```bash
 ll
 gst
+dps
+hg npm
 ```
 
 ---
@@ -80,8 +83,6 @@ gst
 ```bash
 turboalias init
 ```
-
-Sets up turboalias and adds sourcing to your `.bashrc`/`.zshrc`. Reload your shell to activate: `source ~/.bashrc` (or `~/.zshrc`)
 
 ### Add an alias
 
@@ -105,7 +106,7 @@ turboalias remove <name>
 **Example:**
 
 ```bash
-turboalias remove ll
+turboalias remove dps
 ```
 
 ⚡ **Changes apply instantly!** No need to reload your shell after removing aliases.
