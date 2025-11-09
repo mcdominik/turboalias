@@ -40,6 +40,9 @@ class GitSync:
         try:
             # Initialize git
             self._run_git("init")
+            
+            # Create .gitignore
+            self._create_gitignore()
 
             # Create initial commit
             self._run_git("add", "aliases.json")
@@ -80,6 +83,9 @@ class GitSync:
                 check=True,
                 cwd=self.config.config_dir.parent
             )
+            
+            # Ensure .gitignore exists
+            self._create_gitignore()
 
             # Save sync config
             self.save_sync_config({
@@ -166,9 +172,16 @@ class GitSync:
         sync_config = self.load_sync_config()
 
         try:
-            # Check for uncommitted changes
+            # Check for uncommitted changes (exclude untracked files that are gitignored)
             status_result = self._run_git("status", "--porcelain")
-            has_changes = bool(status_result.stdout.strip())
+            
+            # Filter out untracked files (lines starting with ??)
+            # We only care about modified/added/deleted tracked files
+            has_changes = False
+            for line in status_result.stdout.strip().split('\n'):
+                if line and not line.startswith('??'):
+                    has_changes = True
+                    break
 
             # Check if ahead/behind remote
             try:
@@ -218,9 +231,33 @@ class GitSync:
             return
 
         try:
-            # Silently commit and push
-            self.commit_changes()
+            # Silently commit and push in background
+            self.commit_changes("Auto-sync: update aliases")
             self.push()
         except:
             # Fail silently for auto-sync
             pass
+    
+    def _create_gitignore(self):
+        """Create .gitignore to exclude local files"""
+        gitignore_path = self.config.config_dir / ".gitignore"
+        gitignore_content = """# Turboalias local files (not synced)
+aliases.sh
+sync_config.json
+"""
+        try:
+            with open(gitignore_path, 'w') as f:
+                f.write(gitignore_content)
+        except Exception:
+            # Non-critical, continue anyway
+            pass
+
+    def _run_git(self, *args):
+        """Run git command in config directory"""
+        return subprocess.run(
+            ["git"] + list(args),
+            cwd=self.config.config_dir,
+            check=True,
+            capture_output=True,
+            text=True
+        )

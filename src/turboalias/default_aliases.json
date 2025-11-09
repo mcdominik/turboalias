@@ -2,7 +2,7 @@
   "aliases": {
     "ll": {
       "command": "ls -lah",
-      "category": "navigation"
+      "category": "general"
     },
     "dps": {
       "command": "docker ps",
@@ -22,17 +22,16 @@
     },
     "hg": {
       "command": "history | grep",
-      "category": "search"
+      "category": "general"
     },
-    "psg": {
-      "command": "ps aux | grep",
-      "category": "search"
+    "tba": {
+      "command": "turboalias",
+      "category": "general"
     }
   },
   "categories": {
-    "navigation": ["ll"],
+    "general": ["ll", "hg", "tba"],
     "docker": ["dps"],
-    "git": ["gst", "gco", "glog"],
-    "search": ["hg", "psg"]
+    "git": ["gst", "gco", "glog"]
   }
 }

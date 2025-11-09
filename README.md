@@ -12,7 +12,8 @@ Turboalias is a simple, powerful tool to manage your shell aliases across multip
 - ⚡ **Auto-Reload** - Changes apply instantly without manual shell reload
 - 📁 **Category Support** - Organize aliases by category (git, docker, navigation, etc.)
 - 📥 **Import Existing** - Import your current shell aliases
-- 🔄 **Git Sync** - Sync aliases across machines using Git
+- 🔄 **Git Sync** - Sync aliases across machines using Git (optional)
+- 🤖 **Auto-Sync** - Optional background sync after every change
 - 🐚 **Multi-shell** - Works with both bash and zsh
 - 📝 **JSON Config** - Clean, editable configuration file
 - 🎨 **Clean Output** - Aliases organized by category in your shell
@@ -49,7 +50,6 @@ Using pipx (recommended for Python CLI tools):
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 
-# Install turboalias
 pipx install turboalias
 ```
 
@@ -91,8 +91,9 @@ turboalias add gst 'git status' --category git
 turboalias add gco 'git checkout' --category git
 turboalias add dps 'docker ps' --category docker
 turboalias add hg 'history | grep'
-
 ```
+
+⚡ **Changes apply instantly!** No need to reload your shell after removing aliases.
 
 **3. Use your aliases!**
 
@@ -107,16 +108,10 @@ hg npm
 
 ## 📖 Usage
 
-### Initialize turboalias
-
-```bash
-turboalias init
-```
-
 ### Add an alias
 
 ```bash
-turboalias add <name> <command> [--category <category>]
+turboalias add <name> '<command>' [-c <category>]
 ```
 
 **Examples:**
@@ -164,6 +159,14 @@ turboalias import
 
 Scans your current shell for aliases and imports them into turboalias
 
+### Edit config directly
+
+```bash
+turboalias edit
+```
+
+Opens the config file in your `$EDITOR` (defaults to nano)
+
 ### Clear all aliases
 
 ```bash
@@ -172,13 +175,95 @@ turboalias clear
 
 Removes all turboalias-managed aliases (with confirmation)
 
-### Edit config directly
+### Remove entire config
 
 ```bash
-turboalias edit
+turboalias nuke
 ```
 
-Opens the config file in your `$EDITOR` (defaults to nano)
+Removes turboalias<->shell bridge, config, and all turboalias-managed aliases (with confirmation)
+
+---
+
+## 🔄 Git Sync
+
+Sync your aliases across multiple workstations using Git.
+
+### Setup sync on your first machine
+
+```bash
+# Initialize git sync with a remote repository
+turboalias sync init --remote https://github.com/yourusername/my-aliases.git
+
+# Check sync status
+turboalias sync status
+
+# Push your aliases to the remote
+turboalias sync push
+```
+
+### Restore aliases on a new machine
+
+```bash
+# Clone your aliases configuration
+turboalias sync clone https://github.com/yourusername/my-aliases.git
+
+# That's it! All your aliases are now available
+# Reload your shell to use them
+```
+
+### Sync commands
+
+```bash
+# Initialize git sync
+turboalias sync init [--remote <url>] [--branch <name>]
+
+# Clone existing config
+turboalias sync clone <url> [--branch <name>]
+
+# Push local changes
+turboalias sync push
+
+# Pull remote changes
+turboalias sync pull
+
+# Check sync status
+turboalias sync status
+
+# Enable auto-sync (commits & pushes after every change)
+turboalias sync auto on
+
+# Disable auto-sync
+turboalias sync auto off
+```
+
+### How it works
+
+- Git repository is created in `~/.config/turboalias/`
+- Only `aliases.json` is synced (your aliases data)
+- `aliases.sh` (shell script) is generated locally on each machine
+- `sync_config.json` (git settings) stays local
+- Auto-sync runs in background without blocking your commands
+- All operations work offline-first, sync is completely optional
+
+### Example workflow
+
+```bash
+# Machine 1: Set up and push
+turboalias init
+turboalias add ll 'ls -lah'
+turboalias add gst 'git status' -c git
+turboalias sync init --remote https://github.com/user/aliases.git
+turboalias sync push
+
+# Machine 2: Clone and use
+turboalias sync clone https://github.com/user/aliases.git
+# All aliases restored automatically!
+
+# Optional: Enable auto-sync for convenience
+turboalias sync auto on
+# Now every add/remove/clear will auto-sync in background
+```
 
 ---
 
@@ -222,16 +307,17 @@ You can edit this file directly with `turboalias edit` or manually.
 | **Instant Updates**        | Changes apply immediately without manual shell reload         |
 | **Centralized Management** | All your aliases in one place                                 |
 | **Organized**              | Categories keep things tidy                                   |
-| **Portable**               | Easy to backup and sync (just copy `~/.config/turboalias/`)   |
+| **Portable**               | Sync via Git across all your machines                         |
 | **Safe**                   | Doesn't modify your existing aliases, creates a separate file |
 | **Transparent**            | Generated `aliases.sh` is human-readable                      |
 | **Cross-platform**         | Works seamlessly on macOS and Linux                           |
+| **Fast**                   | Auto-sync runs in background, never blocks your workflow      |
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Git sync support for automatic syncing across machines
+- [x] Git sync support for automatic syncing across machines
 - [ ] Alias search functionality
 - [ ] Shell completion support
 - [ ] Export/import to different formats

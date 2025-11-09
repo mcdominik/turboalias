@@ -18,6 +18,7 @@ class TurboaliasCLI:
     def __init__(self):
         self.config = Config()
         self.shell = ShellIntegration(self.config)
+        self.git_sync = GitSync(self.config)
 
     def init(self):
         """Initialize turboalias"""
@@ -112,6 +113,10 @@ class TurboaliasCLI:
             cat_info = f" [{category}]" if category else ""
             print(f"✓ Added alias: {name}{cat_info} = '{command}'")
             print(f"✨ Alias is now available in this terminal!")
+            
+            # Try auto-sync if enabled
+            self._try_auto_sync()
+            
             return 0
         else:
             print(f"❌ Failed to add alias '{name}'")
@@ -123,6 +128,10 @@ class TurboaliasCLI:
             self.shell.generate_aliases_file()
             print(f"✓ Removed alias: {name}")
             print(f"✨ Change is now active in this terminal!")
+            
+            # Try auto-sync if enabled
+            self._try_auto_sync()
+            
             return 0
         else:
             print(f"❌ Alias '{name}' not found")
@@ -241,6 +250,10 @@ class TurboaliasCLI:
         self.shell.generate_aliases_file()
         print("✓ All aliases cleared")
         print(f"✨ Change is now active in this terminal!")
+        
+        # Try auto-sync if enabled
+        self._try_auto_sync()
+        
         return 0
 
     def edit(self):
@@ -257,6 +270,179 @@ class TurboaliasCLI:
         except Exception as e:
             print(f"❌ Failed to open editor: {e}")
             return 1
+
+    def sync_init(self, remote: Optional[str] = None, branch: str = "main"):
+        """Initialize git sync"""
+        if self.git_sync.is_git_initialized():
+            print("✨ Git sync is already initialized!")
+            status = self.git_sync.status()
+            if status.get("remote_url"):
+                print(f"   Remote: {status['remote_url']}")
+                print(f"   Branch: {status.get('branch', 'main')}")
+            return 0
+        
+        print("🔧 Initializing git sync...")
+        
+        if self.git_sync.init_git(remote, branch):
+            print("✓ Git repository initialized")
+            print(f"✓ Created {self.config.config_dir}/.git")
+            
+            if remote:
+                print(f"✓ Added remote: {remote}")
+                print(f"✓ Set branch: {branch}")
+                print("\n💡 Next steps:")
+                print(f"   1. Push to remote: turboalias sync push")
+                print(f"   2. On other machines: turboalias sync clone {remote}")
+            else:
+                print("\n💡 Add a remote to sync across machines:")
+                print("   git -C ~/.config/turboalias remote add origin <your-repo-url>")
+                print("   turboalias sync push")
+            
+            return 0
+        else:
+            print("❌ Failed to initialize git sync")
+            return 1
+
+    def sync_clone(self, remote_url: str, branch: str = "main"):
+        """Clone existing turboalias config from git"""
+        print(f"📥 Cloning turboalias config from {remote_url}...")
+        
+        if self.git_sync.clone_repo(remote_url, branch):
+            print("✓ Successfully cloned configuration")
+            print(f"✓ Remote: {remote_url}")
+            print(f"✓ Branch: {branch}")
+            
+            # Regenerate shell aliases file
+            self.shell.generate_aliases_file()
+            print(f"✓ Generated {self.config.shell_file}")
+            
+            # Count aliases
+            aliases = self.config.get_aliases()
+            print(f"\n✨ Restored {len(aliases)} aliases!")
+            
+            if aliases:
+                print("\n💡 Reload your shell to use the aliases:")
+                print(f"   {self.shell.reload_shell_message()}")
+            
+            return 0
+        else:
+            return 1
+
+    def sync_push(self):
+        """Push changes to remote"""
+        if not self.git_sync.is_git_initialized():
+            print("❌ Git sync not initialized. Run: turboalias sync init")
+            return 1
+        
+        print("📤 Pushing changes to remote...")
+        
+        if self.git_sync.push():
+            print("✓ Successfully pushed to remote")
+            return 0
+        else:
+            return 1
+
+    def sync_pull(self):
+        """Pull changes from remote"""
+        if not self.git_sync.is_git_initialized():
+            print("❌ Git sync not initialized. Run: turboalias sync init")
+            return 1
+        
+        print("📥 Pulling changes from remote...")
+        
+        if self.git_sync.pull():
+            # Regenerate shell aliases file after pull
+            self.shell.generate_aliases_file()
+            print("✓ Successfully pulled from remote")
+            print("✓ Updated local aliases")
+            
+            aliases = self.config.get_aliases()
+            print(f"\n✨ You now have {len(aliases)} aliases!")
+            return 0
+        else:
+            return 1
+
+    def sync_status(self):
+        """Show sync status"""
+        status = self.git_sync.status()
+        
+        if not status.get("initialized"):
+            print("❌ Git sync not initialized")
+            print("\n💡 Get started:")
+            print("   turboalias sync init [--remote <url>]")
+            return 1
+        
+        print("📊 Sync Status:")
+        print(f"   Repository: ✓ Initialized")
+        
+        if status.get("remote_url"):
+            print(f"   Remote: {status['remote_url']}")
+            print(f"   Branch: {status.get('branch', 'main')}")
+        else:
+            print(f"   Remote: ⚠️  Not configured")
+        
+        if status.get("has_changes"):
+            print(f"   Local changes: ⚠️  Uncommitted changes")
+        else:
+            print(f"   Local changes: ✓ Clean")
+        
+        if "ahead" in status:
+            if status["ahead"] > 0:
+                print(f"   Ahead: ⬆️  {status['ahead']} commit(s) to push")
+            else:
+                print(f"   Ahead: ✓ Up to date")
+            
+            if status["behind"] > 0:
+                print(f"   Behind: ⬇️  {status['behind']} commit(s) to pull")
+            else:
+                print(f"   Behind: ✓ Up to date")
+        
+        # Check auto-sync status
+        sync_config = self.git_sync.load_sync_config()
+        auto_sync = sync_config.get("auto_sync", False)
+        print(f"   Auto-sync: {'✓ Enabled' if auto_sync else '○ Disabled'}")
+        
+        if status.get("error"):
+            print(f"\n⚠️  {status['error']}")
+        
+        return 0
+
+    def sync_auto(self, enable: bool):
+        """Enable or disable auto-sync"""
+        if not self.git_sync.is_git_initialized():
+            print("❌ Git sync not initialized. Run: turboalias sync init")
+            return 1
+        
+        sync_config = self.git_sync.load_sync_config()
+        sync_config["auto_sync"] = enable
+        self.git_sync.save_sync_config(sync_config)
+        
+        if enable:
+            print("✓ Auto-sync enabled")
+            print("💡 Your aliases will be automatically pushed after changes")
+        else:
+            print("✓ Auto-sync disabled")
+            print("💡 Use 'turboalias sync push' to manually sync")
+        
+        return 0
+
+    def _try_auto_sync(self):
+        """Attempt background auto-sync if enabled"""
+        if not self.git_sync.is_git_initialized():
+            return
+        
+        sync_config = self.git_sync.load_sync_config()
+        if not sync_config.get("auto_sync", False):
+            return
+        
+        # Background sync - don't block the user
+        try:
+            import threading
+            thread = threading.Thread(target=self.git_sync.auto_sync_if_enabled, daemon=True)
+            thread.start()
+        except Exception:
+            # Silently fail - don't interrupt user's workflow
+            pass
 
     def nuke(self):
         """Completely remove turboalias configuration"""
@@ -349,6 +535,14 @@ def main():
             turboalias clear                                Remove all aliases
             turboalias edit                                 Edit config in $EDITOR
             turboalias nuke                                 Completely remove turboalias
+            
+            🔄 Git Sync:
+            turboalias sync init --remote <url>             Set up git sync
+            turboalias sync clone <url>                     Clone aliases from remote
+            turboalias sync push                            Push changes to remote
+            turboalias sync pull                            Pull changes from remote
+            turboalias sync status                          Check sync status
+            turboalias sync auto on                         Enable auto-sync
 
             💡 Tip: Changes apply instantly - no shell reload needed!
 
@@ -421,6 +615,58 @@ def main():
         help='💣 Completely remove turboalias'
     )
 
+    # sync
+    sync_parser = subparsers.add_parser(
+        'sync',
+        help='🔄 Sync aliases via Git'
+    )
+    sync_subparsers = sync_parser.add_subparsers(
+        dest='sync_command',
+        metavar='<sync-command>',
+        help='Sync operations'
+    )
+
+    # sync init
+    sync_init_parser = sync_subparsers.add_parser(
+        'init',
+        help='Initialize git sync'
+    )
+    sync_init_parser.add_argument('--remote', '-r', help='Remote repository URL')
+    sync_init_parser.add_argument('--branch', '-b', default='main', help='Branch name (default: main)')
+
+    # sync clone
+    sync_clone_parser = sync_subparsers.add_parser(
+        'clone',
+        help='Clone existing config from git'
+    )
+    sync_clone_parser.add_argument('remote_url', help='Remote repository URL')
+    sync_clone_parser.add_argument('--branch', '-b', default='main', help='Branch name (default: main)')
+
+    # sync push
+    sync_subparsers.add_parser(
+        'push',
+        help='Push changes to remote'
+    )
+
+    # sync pull
+    sync_subparsers.add_parser(
+        'pull',
+        help='Pull changes from remote'
+    )
+
+    # sync status
+    sync_subparsers.add_parser(
+        'status',
+        help='Show sync status'
+    )
+
+    # sync auto
+    sync_auto_parser = sync_subparsers.add_parser(
+        'auto',
+        help='Enable/disable auto-sync'
+    )
+    sync_auto_parser.add_argument('mode', choices=['on', 'off'], help='Enable or disable auto-sync')
+
     args = parser.parse_args()
 
     if not args.command:
@@ -448,6 +694,30 @@ def main():
             return cli.edit()
         elif args.command == 'nuke':
             return cli.nuke()
+        elif args.command == 'sync':
+            if not args.sync_command:
+                print("❌ Sync command required")
+                print("\n💡 Available sync commands:")
+                print("   turboalias sync init [--remote <url>]")
+                print("   turboalias sync clone <url>")
+                print("   turboalias sync push")
+                print("   turboalias sync pull")
+                print("   turboalias sync status")
+                print("   turboalias sync auto on|off")
+                return 1
+            
+            if args.sync_command == 'init':
+                return cli.sync_init(args.remote, args.branch)
+            elif args.sync_command == 'clone':
+                return cli.sync_clone(args.remote_url, args.branch)
+            elif args.sync_command == 'push':
+                return cli.sync_push()
+            elif args.sync_command == 'pull':
+                return cli.sync_pull()
+            elif args.sync_command == 'status':
+                return cli.sync_status()
+            elif args.sync_command == 'auto':
+                return cli.sync_auto(args.mode == 'on')
     except KeyboardInterrupt:
         print("\n\nCancelled")
         return 130
