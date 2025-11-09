@@ -99,20 +99,20 @@ class ShellIntegration:
 
         # Add both the aliases source and a wrapper function for auto-reload
         source_lines = f'''
-            # turboalias aliases
-            [ -f "{self.config.shell_file}" ] && source "{self.config.shell_file}"
+# turboalias aliases
+[ -f "{self.config.shell_file}" ] && source "{self.config.shell_file}"
 
-            # turboalias wrapper function for auto-reload
-            turboalias() {{
-                command turboalias "$@"
-                local exit_code=$?
-                # Reload aliases after add/remove/import/clear commands
-                if [ $exit_code -eq 0 ] && [[ "$1" =~ ^(add|remove|import|clear|edit)$ ]]; then
-                    source "{self.config.shell_file}" 2>/dev/null
-                fi
-                return $exit_code
-            }}
-            '''
+# turboalias wrapper function for auto-reload
+turboalias() {{
+    command turboalias "$@"
+    local exit_code=$?
+    # Reload aliases after add/remove/import/clear commands
+    if [ $exit_code -eq 0 ] && [[ "$1" =~ ^(add|remove|import|clear|edit)$ ]]; then
+        source "{self.config.shell_file}" 2>/dev/null
+    fi
+    return $exit_code
+}}
+'''
 
         with open(rc_file, 'a') as f:
             f.write(source_lines)

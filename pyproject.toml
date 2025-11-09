@@ -25,3 +25,9 @@ turboalias = "turboalias.cli:main"
 [project.urls]
 Homepage = "https://github.com/mcdominik/turboalias"
 "Bug Tracker" = "https://github.com/mcdominik/turboalias/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/turboalias"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/turboalias/default_aliases.json" = "turboalias/default_aliases.json"

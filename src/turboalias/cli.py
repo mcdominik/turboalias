@@ -31,15 +31,30 @@ class TurboaliasCLI:
         # Check if already initialized
         rc_file = self.shell.get_shell_rc_file(shell)
         aliases_file_exists = self.config.shell_file.exists()
+        config_file_exists = self.config.config_file.exists()
         
         if self.shell.add_source_line(shell):
             # First time setup
             print("🔧 Initializing turboalias...")
             print(f"✓ Added turboalias to {rc_file}")
             
+            # Create default config with example aliases if no config exists
+            if not config_file_exists:
+                self.config._create_default_config()
+                print(f"✓ Created {self.config.config_file} with example aliases")
+            
             # Generate initial aliases file
             self.shell.generate_aliases_file()
             print(f"✓ Created {self.config.shell_file}")
+            
+            # Show example aliases
+            if not config_file_exists:
+                print("\n✨ Turboalias comes with helpful example aliases:")
+                print("   • ll = 'ls -lah' [navigation]")
+                print("   • dps = 'docker ps' [docker]")
+                print("   • gst = 'git status' [git]")
+                print("   • hg = 'history | grep' [search]")
+                print("   ... and 4 more! Run 'turboalias list' to see all")
             
             # Prompt to import existing aliases
             print("\n📥 Import your existing shell aliases?")

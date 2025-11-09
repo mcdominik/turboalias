@@ -1,0 +1,38 @@
+{
+  "aliases": {
+    "ll": {
+      "command": "ls -lah",
+      "category": "navigation"
+    },
+    "dps": {
+      "command": "docker ps",
+      "category": "docker"
+    },
+    "gst": {
+      "command": "git status",
+      "category": "git"
+    },
+    "gco": {
+      "command": "git checkout",
+      "category": "git"
+    },
+    "glog": {
+      "command": "git log --oneline --graph --decorate",
+      "category": "git"
+    },
+    "hg": {
+      "command": "history | grep",
+      "category": "search"
+    },
+    "psg": {
+      "command": "ps aux | grep",
+      "category": "search"
+    }
+  },
+  "categories": {
+    "navigation": ["ll"],
+    "docker": ["dps"],
+    "git": ["gst", "gco", "glog"],
+    "search": ["hg", "psg"]
+  }
+}

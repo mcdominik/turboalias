@@ -20,6 +20,19 @@ class Config:
         """Create config directory if it doesn't exist"""
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
+    def _create_default_config(self):
+        """Create default config with example aliases from default_aliases.json"""
+        default_file = Path(__file__).parent / "default_aliases.json"
+        
+        try:
+            with open(default_file, 'r') as f:
+                default_config = json.load(f)
+            self.save_aliases(default_config)
+        except Exception as e:
+            print(f"Warning: Could not load default aliases: {e}")
+            # Fallback to empty config
+            self.save_aliases({"aliases": {}, "categories": {}})
+
     def load_aliases(self) -> Dict:
         """Load aliases from config file"""
         if not self.config_file.exists():
