@@ -31,10 +31,39 @@ Turboalias is a simple, powerful tool to manage your shell aliases across multip
 
 ## 📦 Installation
 
-### Via pip (recommended)
+### macOS (recommended)
 
-````bash
+Using Homebrew:
+
+```bash
+brew tap mcdominik/turboalias
+brew install turboalias
+```
+
+### Linux & macOS (alternative)
+
+Using pipx (recommended for Python CLI tools):
+
+```bash
+# Install pipx if you don't have it
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+
+# Install turboalias
+pipx install turboalias
+```
+
+> **Note:** This method works on both Linux and macOS. Modern Linux distributions discourage system-wide `pip install` without virtual environments (PEP 668). `pipx` is the recommended way to install Python CLI applications as it automatically manages isolated environments.
+
+### Alternative: pip with virtual environment
+
+If you prefer using pip, use a virtual environment:
+
+```bash
+python3 -m venv ~/.venvs/turboalias
+source ~/.venvs/turboalias/bin/activate
 pip install turboalias
+```
 
 ### From source
 
@@ -42,7 +71,7 @@ pip install turboalias
 git clone https://github.com/mcdominik/turboalias.git
 cd turboalias
 pip install -e .
-````
+```
 
 ---
 
