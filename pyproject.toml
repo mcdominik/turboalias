@@ -1,33 +1,23 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
 
 [project]
 name = "turboalias"
-version = "0.1.0"
+version = "0.0.2"
 description = "Cross-workstation alias manager for bash and zsh"
-readme = "README.md"
-requires-python = ">=3.7"
-license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "ddominik.mackiewicz@gmail.com"}
+    {name = "Dominik Mackiewicz", email = "ddominik.mackiewicz@gmail.com"}
 ]
-keywords = ["alias", "aliases", "bash", "zsh", "shell", "terminal"]
+readme = "README.md"
+requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Topic :: System :: Shells",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-
+    "Operating System :: OS Independent",
 ]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+keywords = ["alias", "aliases", "bash", "zsh", "shell", "terminal"]
 
 [project.scripts]
 turboalias = "turboalias.cli:main"
