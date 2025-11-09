@@ -9,12 +9,23 @@ Turboalias is a simple, powerful tool to manage your shell aliases across multip
 ## ✨ Features
 
 - 🎯 **Simple CLI** - Easy commands to add, remove, and list aliases
+- ⚡ **Auto-Reload** - Changes apply instantly without manual shell reload
 - 📁 **Category Support** - Organize aliases by category (git, docker, navigation, etc.)
 - 📥 **Import Existing** - Import your current shell aliases
 - 🔄 **Git Sync** - Sync aliases across machines using Git
 - 🐚 **Multi-shell** - Works with both bash and zsh
 - 📝 **JSON Config** - Clean, editable configuration file
 - 🎨 **Clean Output** - Aliases organized by category in your shell
+
+---
+
+## 🖥️ Supported Platforms
+
+| Platform    | Shells          | Status             |
+| ----------- | --------------- | ------------------ |
+| **macOS**   | bash, zsh       | ✅ Fully supported |
+| **Linux**   | bash, zsh       | ✅ Fully supported |
+| **Windows** | WSL (bash, zsh) | ✅ Via WSL         |
 
 ---
 
@@ -59,11 +70,27 @@ turboalias add dps 'docker ps' --category docker
 source ~/.bashrc  # or ~/.zshrc
 ```
 
-**4. Use your aliases!**
+**1. Initialize turboalias**
 
 ```bash
-ll
-gst
+turboalias init
+source ~/.bashrc  # or ~/.zshrc (one-time setup)
+```
+
+**2. Add some aliases**
+
+```bash
+turboalias add ll 'ls -lah'
+turboalias add gst 'git status' --category git
+turboalias add gco 'git checkout' --category git
+turboalias add dps 'docker ps' --category docker
+```
+
+**3. Use your aliases immediately!**
+
+```bash
+ll        # works right away!
+gst       # no reload needed!
 ```
 
 ---
@@ -76,7 +103,7 @@ gst
 turboalias init
 ```
 
-Sets up turboalias and adds sourcing to your `.bashrc`/`.zshrc`
+Sets up turboalias and adds a wrapper function to your `.bashrc`/`.zshrc`. **Note:** You'll need to reload your shell once after initial setup (`source ~/.bashrc` or `source ~/.zshrc`).
 
 ### Add an alias
 
@@ -91,6 +118,8 @@ turboalias add ll 'ls -lah'
 turboalias add gst 'git status' -c git
 ```
 
+⚡ **Changes apply instantly!** No need to reload your shell after adding aliases.
+
 ### Remove an alias
 
 ```bash
@@ -102,6 +131,8 @@ turboalias remove <name>
 ```bash
 turboalias remove ll
 ```
+
+⚡ **Changes apply instantly!** No need to reload your shell after removing aliases.
 
 ### List aliases
 
@@ -125,7 +156,7 @@ turboalias categories
 turboalias import
 ```
 
-Scans your current shell for aliases and imports them into turboalias
+Scans your current shell for aliases and imports them into turboalias. Changes apply instantly!
 
 ### Clear all aliases
 
@@ -133,7 +164,7 @@ Scans your current shell for aliases and imports them into turboalias
 turboalias clear
 ```
 
-Removes all turboalias-managed aliases (with confirmation)
+Removes all turboalias-managed aliases (with confirmation). Changes apply instantly!
 
 ### Edit config directly
 
@@ -141,7 +172,7 @@ Removes all turboalias-managed aliases (with confirmation)
 turboalias edit
 ```
 
-Opens the config file in your `$EDITOR` (defaults to nano)
+Opens the config file in your `$EDITOR` (defaults to nano). Changes apply instantly after saving!
 
 ---
 
@@ -153,6 +184,12 @@ Turboalias stores its configuration in `~/.config/turboalias/`:
 | -------------- | ---------------------------------------------- |
 | `aliases.json` | Your aliases and categories                    |
 | `aliases.sh`   | Generated shell script (sourced by your shell) |
+
+### How Auto-Reload Works
+
+Turboalias installs a wrapper function in your shell configuration that automatically reloads aliases after you make changes. When you run commands like `turboalias add`, `turboalias remove`, or `turboalias edit`, the wrapper function detects this and sources the updated aliases file automatically.
+
+This means you only need to reload your shell once during initial setup - after that, all changes apply instantly! 🚀
 
 ### Config file format
 
@@ -182,11 +219,13 @@ You can edit this file directly with `turboalias edit` or manually.
 
 | Benefit                    | Description                                                   |
 | -------------------------- | ------------------------------------------------------------- |
+| **Instant Updates**        | Changes apply immediately without manual shell reload         |
 | **Centralized Management** | All your aliases in one place                                 |
 | **Organized**              | Categories keep things tidy                                   |
 | **Portable**               | Easy to backup and sync (just copy `~/.config/turboalias/`)   |
 | **Safe**                   | Doesn't modify your existing aliases, creates a separate file |
 | **Transparent**            | Generated `aliases.sh` is human-readable                      |
+| **Cross-platform**         | Works seamlessly on macOS and Linux                           |
 
 ---
 
@@ -219,5 +258,5 @@ MIT License - see LICENSE file for details
 ---
 
 <div align="center">
-Made with ❤️ for shell enthusiasts
+Made with ❤️ for unix enthusiasts
 </div>
