@@ -33,14 +33,13 @@ class ShellIntegration:
         else:
             return None
 
-    def get_shell_rc_file(shell: str) -> Path:
+    def get_shell_rc_file(self, shell) -> Path:
         """
         Get the most likely RC file path for bash or zsh,
         respecting environment variables and common OS conventions.
 
         Args:
-            shell: The name of the shell (e.g., "bash", "zsh")
-                or a path to it (e.g., "/bin/bash").
+            shell: The SupportedShell enum value or shell name (e.g., "bash", "zsh")
 
         Returns:
             A Path object to the shell's configuration file.
@@ -50,8 +49,12 @@ class ShellIntegration:
         """
         home = Path.home()
 
-        # Allow passing full paths like /bin/bash by getting the name
-        shell_name = Path(shell).name
+        # Handle SupportedShell enum
+        if isinstance(shell, SupportedShell):
+            shell_name = shell.value
+        else:
+            # Allow passing full paths like /bin/bash by getting the name
+            shell_name = Path(shell).name
 
         if shell_name == "bash":
             # On macOS, interactive login shells often read .bash_profile.
@@ -95,10 +98,25 @@ class ShellIntegration:
         if self.is_turboalias_sourced(shell):
             return False
 
-        source_line = f'\n# turboalias aliases\n[ -f "{self.config.shell_file}" ] && source "{self.config.shell_file}"\n'
+        # Add both the aliases source and a wrapper function for auto-reload
+        source_lines = f'''
+            # turboalias aliases
+            [ -f "{self.config.shell_file}" ] && source "{self.config.shell_file}"
+
+            # turboalias wrapper function for auto-reload
+            turboalias() {{
+                command turboalias "$@"
+                local exit_code=$?
+                # Reload aliases after add/remove/import/clear commands
+                if [ $exit_code -eq 0 ] && [[ "$1" =~ ^(add|remove|import|clear|edit)$ ]]; then
+                    source "{self.config.shell_file}" 2>/dev/null
+                fi
+                return $exit_code
+            }}
+            '''
 
         with open(rc_file, 'a') as f:
-            f.write(source_line)
+            f.write(source_lines)
 
         return True
 
@@ -188,3 +206,24 @@ class ShellIntegration:
         commands.append(f"source {rc_file}")
 
         return f"Run: {' or '.join(commands)}"
+
+    def auto_reload_aliases(self) -> bool:
+        """Automatically reload aliases in the current shell process"""
+        try:
+            # Write a shell script that can be sourced by the parent shell
+            reload_script = self.config.config_dir / ".reload_aliases.sh"
+            
+            with open(reload_script, 'w') as f:
+                f.write(f'source "{self.config.shell_file}"\n')
+            
+            # Make it executable
+            reload_script.chmod(0o755)
+            
+            # Print the source command that the user's shell can execute
+            print(f"\n💡 To apply changes in this terminal, run:")
+            print(f"   source {self.config.shell_file}")
+            
+            return True
+        except Exception as e:
+            print(f"Warning: Could not prepare auto-reload: {e}")
+            return False

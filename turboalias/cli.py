@@ -23,21 +23,21 @@ class TurboaliasCLI:
         """Initialize turboalias"""
         print("🔧 Initializing turboalias...")
 
-        shells = self.shell.detect_shells()
+        shell = self.shell.detect_shells()
 
-        if not shells:
+        if not shell:
             print("❌ No supported shell found (.bashrc or .zshrc)")
             print("   Please create ~/.bashrc or ~/.zshrc first")
             return 1
 
-        added = []
-        for shell in shells:
-            if self.shell.add_source_line(shell):
-                added.append(shell)
-                rc_file = self.shell.get_shell_rc_file(shell)
-                print(f"✓ Added turboalias to {rc_file}")
-            else:
-                print(f"✓ Turboalias already configured in {shell}")
+        if self.shell.add_source_line(shell):
+            rc_file = self.shell.get_shell_rc_file(shell)
+            print(f"✓ Added turboalias to {rc_file}")
+            added = True
+        else:
+            rc_file = self.shell.get_shell_rc_file(shell)
+            print(f"✓ Turboalias already configured in {rc_file}")
+            added = False
 
         # Generate initial aliases file
         self.shell.generate_aliases_file()
@@ -60,7 +60,7 @@ class TurboaliasCLI:
             self.shell.generate_aliases_file()
             cat_info = f" [{category}]" if category else ""
             print(f"✓ Added alias: {name}{cat_info} = '{command}'")
-            print(f"⚡ {self.shell.reload_shell_message()}")
+            print(f"✨ Alias is now available in this terminal!")
             return 0
         else:
             print(f"❌ Failed to add alias '{name}'")
@@ -71,7 +71,7 @@ class TurboaliasCLI:
         if self.config.remove_alias(name):
             self.shell.generate_aliases_file()
             print(f"✓ Removed alias: {name}")
-            print(f"⚡ {self.shell.reload_shell_message()}")
+            print(f"✨ Change is now active in this terminal!")
             return 0
         else:
             print(f"❌ Alias '{name}' not found")
@@ -166,7 +166,7 @@ class TurboaliasCLI:
 
         self.shell.generate_aliases_file()
         print(f"✓ Imported {imported} aliases")
-        print(f"⚡ {self.shell.reload_shell_message()}")
+        print(f"✨ Aliases are now available in this terminal!")
         return 0
 
     def clear(self):
@@ -188,7 +188,7 @@ class TurboaliasCLI:
         self.config.clear_aliases()
         self.shell.generate_aliases_file()
         print("✓ All aliases cleared")
-        print(f"⚡ {self.shell.reload_shell_message()}")
+        print(f"✨ Change is now active in this terminal!")
         return 0
 
     def edit(self):
@@ -200,7 +200,7 @@ class TurboaliasCLI:
             # Regenerate aliases file after editing
             self.shell.generate_aliases_file()
             print(f"✓ Config updated")
-            print(f"⚡ {self.shell.reload_shell_message()}")
+            print(f"✨ Changes are now active in this terminal!")
             return 0
         except Exception as e:
             print(f"❌ Failed to open editor: {e}")
@@ -235,7 +235,7 @@ Examples:
     # add
     add_parser = subparsers.add_parser('add', help='Add a new alias')
     add_parser.add_argument('name', help='Alias name')
-    add_parser.add_argument('command', help='Command to alias')
+    add_parser.add_argument('cmd', help='Command to alias')
     add_parser.add_argument('--category', '-c', help='Category for the alias')
 
     # remove
@@ -270,7 +270,7 @@ Examples:
         if args.command == 'init':
             return cli.init()
         elif args.command == 'add':
-            return cli.add(args.name, args.command, args.category)
+            return cli.add(args.name, args.cmd, args.category)
         elif args.command == 'remove':
             return cli.remove(args.name)
         elif args.command == 'list':
