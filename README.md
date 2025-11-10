@@ -1,3 +1,8 @@
+[![PyPI version](https://badge.fury.io/py/turboalias.svg)](https://badge.fury.io/py/turboalias)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey.svg)](https://github.com/mcdominik/turboalias)
+
 # 🚀 Turboalias
 
 **Cross-workstation alias manager for bash and zsh**
