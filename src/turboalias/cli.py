@@ -26,7 +26,6 @@ class TurboaliasCLI:
 
         if not shell:
             print("❌ No supported shell found (.bashrc or .zshrc)")
-            print("   Please create ~/.bashrc or ~/.zshrc first")
             return 1
 
         # Check if already initialized
@@ -34,9 +33,14 @@ class TurboaliasCLI:
         aliases_file_exists = self.config.shell_file.exists()
         config_file_exists = self.config.config_file.exists()
         
-        if self.shell.add_source_line(shell):
+        if not self.shell.is_initialized(shell):
             # First time setup
             print("🔧 Initializing turboalias...")
+            
+            if not self.shell.initialize_shell_integration(shell):
+                print("❌ Failed to initialize shell integration")
+                return 1
+            
             print(f"✓ Added turboalias to {rc_file}")
             
             # Create default config with example aliases if no config exists
@@ -44,20 +48,17 @@ class TurboaliasCLI:
                 self.config._create_default_config()
                 print(f"✓ Created {self.config.config_file} with example aliases")
             
-            # Generate initial aliases file
             self.shell.generate_aliases_file()
             print(f"✓ Created {self.config.shell_file}")
             
-            # Show example aliases
             if not config_file_exists:
                 print("\n✨ Turboalias comes with helpful example aliases:")
-                print("   • ll = 'ls -lah' [navigation]")
+                print("   • tba = 'turboalias' [general]")
                 print("   • dps = 'docker ps' [docker]")
                 print("   • gst = 'git status' [git]")
-                print("   • hg = 'history | grep' [search]")
+                print("   • hg = 'history | grep' [general]")
                 print("   ... and 4 more! Run 'turboalias list' to see all")
             
-            # Prompt to import existing aliases
             print("\n📥 Import your existing shell aliases?")
             response = input("   (Y/n) [default: yes]: ").strip().lower()
             
@@ -556,13 +557,11 @@ def main():
         help='Available commands'
     )
 
-    # init
     subparsers.add_parser(
         'init',
         help='🔧 Set up turboalias in your shell'
     )
 
-    # add
     add_parser = subparsers.add_parser(
         'add',
         help='➕ Create a new alias'
@@ -571,51 +570,43 @@ def main():
     add_parser.add_argument('cmd', help='Command to run')
     add_parser.add_argument('--category', '-c', help='Optional category (git, docker, etc.)')
 
-    # remove
     remove_parser = subparsers.add_parser(
         'remove',
         help='🗑️  Delete an alias'
     )
     remove_parser.add_argument('name', help='Alias to remove')
 
-    # list
     list_parser = subparsers.add_parser(
         'list',
         help='📋 Show your aliases'
     )
     list_parser.add_argument('--category', '-c', help='Filter by category')
 
-    # categories
     subparsers.add_parser(
         'categories',
         help='📁 View all categories'
     )
 
-    # import
     subparsers.add_parser(
         'import',
         help='📥 Import aliases from your shell'
     )
 
-    # clear
     subparsers.add_parser(
         'clear',
         help='🧹 Remove all aliases'
     )
 
-    # edit
     subparsers.add_parser(
         'edit',
         help='✏️  Edit config file directly'
     )
 
-    # nuke
     subparsers.add_parser(
         'nuke',
         help='💣 Completely remove turboalias'
     )
 
-    # sync
     sync_parser = subparsers.add_parser(
         'sync',
         help='🔄 Sync aliases via Git'
@@ -626,7 +617,6 @@ def main():
         help='Sync operations'
     )
 
-    # sync init
     sync_init_parser = sync_subparsers.add_parser(
         'init',
         help='Initialize git sync'
@@ -634,7 +624,6 @@ def main():
     sync_init_parser.add_argument('--remote', '-r', help='Remote repository URL')
     sync_init_parser.add_argument('--branch', '-b', default='main', help='Branch name (default: main)')
 
-    # sync clone
     sync_clone_parser = sync_subparsers.add_parser(
         'clone',
         help='Clone existing config from git'
@@ -642,25 +631,21 @@ def main():
     sync_clone_parser.add_argument('remote_url', help='Remote repository URL')
     sync_clone_parser.add_argument('--branch', '-b', default='main', help='Branch name (default: main)')
 
-    # sync push
     sync_subparsers.add_parser(
         'push',
         help='Push changes to remote'
     )
 
-    # sync pull
     sync_subparsers.add_parser(
         'pull',
         help='Pull changes from remote'
     )
 
-    # sync status
     sync_subparsers.add_parser(
         'status',
         help='Show sync status'
     )
 
-    # sync auto
     sync_auto_parser = sync_subparsers.add_parser(
         'auto',
         help='Enable/disable auto-sync'

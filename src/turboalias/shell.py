@@ -36,19 +36,9 @@ class ShellIntegration:
         """
         Get the most likely RC file path for bash or zsh,
         respecting environment variables and common OS conventions.
-
-        Args:
-            shell: The SupportedShell enum value or shell name (e.g., "bash", "zsh")
-
-        Returns:
-            A Path object to the shell's configuration file.
-
-        Raises:
-            ValueError: If the shell is not bash or zsh.
         """
         home = Path.home()
 
-        # Handle SupportedShell enum
         if isinstance(shell, SupportedShell):
             shell_name = shell.value
         else:
@@ -57,7 +47,6 @@ class ShellIntegration:
 
         if shell_name == "bash":
             # On macOS, interactive login shells often read .bash_profile.
-            # We check if it exists first.
             bash_profile = home / ".bash_profile"
             if bash_profile.exists():
                 return bash_profile
@@ -66,8 +55,7 @@ class ShellIntegration:
             return home / ".bashrc"
 
         elif shell_name == "zsh":
-            # Zsh respects the $ZDOTDIR environment variable.
-            # If it's set, the config file is $ZDOTDIR/.zshrc.
+            # If $ZDOTDIR, the config file is $ZDOTDIR/.zshrc.
             if zdotdir := os.environ.get("ZDOTDIR"):
                 return Path(zdotdir) / ".zshrc"
 
@@ -90,11 +78,27 @@ class ShellIntegration:
 
         return str(self.config.shell_file) in content
 
-    def add_source_line(self, shell: str) -> bool:
-        """Add source line to shell RC file"""
+    def is_initialized(self, shell: str) -> bool:
+        """Check if turboalias is already initialized in the shell
+        
+        Returns:
+            True if turboalias is already set up in the shell RC file
+            False if turboalias needs to be initialized
+        """
+        return self.is_turboalias_sourced(shell)
+
+    def initialize_shell_integration(self, shell: str) -> bool:
+        """Initialize turboalias in the shell RC file
+        
+        Adds the source line and wrapper function to the shell RC file.
+        
+        Returns:
+            True if initialization was successful
+            False if already initialized or failed
+        """
         rc_file = self.get_shell_rc_file(shell)
 
-        if self.is_turboalias_sourced(shell):
+        if self.is_initialized(shell):
             return False
 
         # Add both the aliases source and a wrapper function for auto-reload
@@ -130,7 +134,6 @@ turboalias() {{
             ""
         ]
 
-        # Group by category
         categorized = {}
         uncategorized = []
 
@@ -168,7 +171,6 @@ turboalias() {{
     def import_existing_aliases(self, shell: SupportedShell) -> Dict[str, str]:
         """Import aliases from current shell"""
         try:
-            # Get shell name
             shell_name = shell.value if isinstance(shell, SupportedShell) else shell
             
             # Try to get aliases from current shell
@@ -221,7 +223,6 @@ turboalias() {{
             # Make it executable
             reload_script.chmod(0o755)
             
-            # Print the source command that the user's shell can execute
             print(f"\n💡 To apply changes in this terminal, run:")
             print(f"   source {self.config.shell_file}")
             

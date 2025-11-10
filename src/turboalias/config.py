@@ -9,7 +9,6 @@ from typing import Dict, List, Optional
 
 class Config:
     """Manages turboalias configuration and aliases storage"""
-
     def __init__(self):
         self.config_dir = Path.home() / ".config" / "turboalias"
         self.config_file = self.config_dir / "aliases.json"
@@ -30,7 +29,6 @@ class Config:
             self.save_aliases(default_config)
         except Exception as e:
             print(f"Warning: Could not load default aliases: {e}")
-            # Fallback to empty config
             self.save_aliases({"aliases": {}, "categories": {}})
 
     def load_aliases(self) -> Dict:

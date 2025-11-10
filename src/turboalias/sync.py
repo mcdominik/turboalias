@@ -38,10 +38,8 @@ class GitSync:
     def init_git(self, remote_url: Optional[str] = None, branch: str = "main") -> bool:
         """Initialize git repo in config directory"""
         try:
-            # Initialize git
             self._run_git("init")
             
-            # Create .gitignore
             self._create_gitignore()
 
             # Create initial commit
@@ -84,10 +82,9 @@ class GitSync:
                 cwd=self.config.config_dir.parent
             )
             
-            # Ensure .gitignore exists
+            # Ensure .gitignore exists (in case remote doesn't have it)
             self._create_gitignore()
 
-            # Save sync config
             self.save_sync_config({
                 "enabled": True,
                 "remote_url": remote_url,
@@ -185,7 +182,8 @@ class GitSync:
 
             # Check if ahead/behind remote
             try:
-                fetch_result = self._run_git("fetch", "origin")
+                # Fetch latest remote state
+                self._run_git("fetch", "origin")
                 branch = sync_config.get("branch", "main")
                 rev_list = self._run_git(
                     "rev-list", "--left-right", "--count", f"origin/{branch}...HEAD")
@@ -199,8 +197,8 @@ class GitSync:
                     "remote_url": sync_config.get("remote_url"),
                     "branch": branch
                 }
-            except:
-                # No remote or can't reach it
+            except Exception as e:
+                print(f"Warning: Could not fetch remote state: {e}")
                 return {
                     "initialized": True,
                     "has_changes": has_changes,
@@ -248,16 +246,6 @@ sync_config.json
         try:
             with open(gitignore_path, 'w') as f:
                 f.write(gitignore_content)
-        except Exception:
-            # Non-critical, continue anyway
+        except Exception as e:
+            print(f"Warning: Could not create .gitignore: {e}")
             pass
-
-    def _run_git(self, *args):
-        """Run git command in config directory"""
-        return subprocess.run(
-            ["git"] + list(args),
-            cwd=self.config.config_dir,
-            check=True,
-            capture_output=True,
-            text=True
-        )

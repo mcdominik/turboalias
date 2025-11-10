@@ -8,13 +8,12 @@ Turboalias is a simple, powerful tool to manage your shell aliases across multip
 
 ## ✨ Features
 
-- 🎯 **Simple CLI** - Easy commands to add, remove, and list aliases
-- ⚡ **Auto-Reload** - Changes apply instantly without manual shell reload
-- 📁 **Category Support** - Organize aliases by category (git, docker, navigation, etc.)
-- 📥 **Import Existing** - Import your current shell aliases
-- 🔄 **Git Sync** - Sync aliases across machines using Git (optional)
-- 🤖 **Auto-Sync** - Optional background sync after every change
 - 🐚 **Multi-shell** - Works with both bash and zsh
+- ⚡ **Auto-Reload** - Changes apply instantly without manual shell reload
+- 🔄 **Auto-Sync** - Sync aliases across machines using Git (optional)
+- 🎯 **Simple CLI** - Easy commands to add, remove, and list aliases
+- 📁 **Category Support** - Organize aliases by category (git, docker, navigation, etc.)
+- 📥 **Quick Migration** - Import your current shell aliases
 - 📝 **JSON Config** - Clean, editable configuration file
 - 🎨 **Clean Output** - Aliases organized by category in your shell
 
@@ -86,22 +85,15 @@ turboalias init
 **2. Add some aliases**
 
 ```bash
-turboalias add ll 'ls -lah'
-turboalias add gst 'git status' --category git
-turboalias add gco 'git checkout' --category git
 turboalias add dps 'docker ps' --category docker
-turboalias add hg 'history | grep'
 ```
 
-⚡ **Changes apply instantly!** No need to reload your shell after removing aliases.
+⚡ **Changes apply instantly!** No need to reload your shell after adding aliases.
 
 **3. Use your aliases!**
 
 ```bash
-ll
-gst
 dps
-hg npm
 ```
 
 ---
@@ -193,7 +185,9 @@ Sync your aliases across multiple workstations using Git.
 
 ```bash
 # Initialize git sync with a remote repository
-turboalias sync init --remote https://github.com/yourusername/my-aliases.git
+turboalias sync init --remote https://github.com/<username>/my-turboalias-config.git
+
+⚡ **Share your setup!** You can also use one shared by the community..
 
 # Check sync status
 turboalias sync status
@@ -253,11 +247,11 @@ turboalias sync auto off
 turboalias init
 turboalias add ll 'ls -lah'
 turboalias add gst 'git status' -c git
-turboalias sync init --remote https://github.com/user/aliases.git
+turboalias sync init --remote https://github.com/mcdominik/my-turboalias-config.git
 turboalias sync push
 
 # Machine 2: Clone and use
-turboalias sync clone https://github.com/user/aliases.git
+turboalias sync clone https://github.com/mcdominik/my-turboalias-config.git
 # All aliases restored automatically!
 
 # Optional: Enable auto-sync for convenience
@@ -318,7 +312,6 @@ You can edit this file directly with `turboalias edit` or manually.
 ## 🗺️ Roadmap
 
 - [x] Git sync support for automatic syncing across machines
-- [ ] Alias search functionality
 - [ ] Shell completion support
 - [ ] Export/import to different formats
 - [ ] Alias templates and snippets
