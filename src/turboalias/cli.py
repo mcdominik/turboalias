@@ -7,6 +7,7 @@ import subprocess
 import sys
 from typing import Optional
 
+from . import __version__
 from .config import Config
 from .shell import ShellIntegration
 from .sync import GitSync
@@ -521,7 +522,7 @@ def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
         prog='turboalias',
-        description='🚀 Turboalias - Cross-workstation alias manager for bash and zsh',
+        description=f'🚀 Turboalias v{__version__} - Cross-workstation alias manager for bash and zsh',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
             ✨ Examples:
@@ -549,6 +550,12 @@ def main():
 
             📖 Documentation: https://github.com/mcdominik/turboalias
         """
+    )
+    
+    parser.add_argument(
+        '--version', '-v',
+        action='version',
+        version=f'turboalias {__version__}'
     )
 
     subparsers = parser.add_subparsers(
