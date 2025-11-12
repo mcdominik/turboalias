@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "turboalias"
-version = "0.0.4"
+version = "0.0.5"
 description = "Cross-workstation alias manager for bash and zsh"
 authors = [
     {name = "Dominik Mackiewicz", email = "ddominik.mackiewicz@gmail.com"}

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-11-12
+
+### Added
+
+- **Enhanced Git Sync Error Handling**: Improved error messages for common sync failures
+  - Specific detection and guidance for non-fast-forward push errors
+  - Better diagnostics for authentication and connectivity issues
+- **Sync Connectivity Checker**: New `turboalias sync check` command to diagnose sync issues
+- **Reliable Auto-Sync**: Fixed background auto-sync to work consistently
+  - Changed from daemon to non-daemon thread with 2-second timeout
+
+### Fixed
+
+- **Auto-sync reliability**: Background sync now completes successfully on every change
+- **Non-fast-forward push errors**: Now provides clear guidance instead of generic error messages
+- **Thread lifecycle**: Auto-sync threads no longer terminate prematurely
+
+### Improved
+
+- Error messages now include specific diagnoses and fix suggestions
+- Better logging of sync errors for debugging
+- More helpful output for multi-account GitHub setups
+
+⚠️ **This is an early development release (0.0.x). The API and features are not stable and may change.**
+
 ## [0.0.4] - 2025-11-10
 
 ### Added

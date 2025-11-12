@@ -188,7 +188,19 @@ class GitSync:
             error_msg = e.stderr.strip() if e.stderr else str(e)
             
             # Provide helpful error messages
-            if "403" in error_msg or "Permission" in error_msg or "denied" in error_msg:
+            if "rejected" in error_msg and "non-fast-forward" in error_msg:
+                print(f"❌ Push failed: Your local branch has diverged from remote")
+                print(f"\n💡 This happens when:")
+                print(f"   • Changes were made on another machine and pushed")
+                print(f"   • You're trying to push different local changes")
+                print(f"\n🔧 To fix, pull remote changes first:")
+                print(f"   turboalias sync pull")
+                print(f"   turboalias sync push")
+                print(f"\n   Or manually:")
+                print(f"   git -C ~/.config/turboalias pull --rebase origin {branch}")
+                print(f"   turboalias sync push")
+                print(f"\n📝 Full error logged to: {self.error_log_file}")
+            elif "403" in error_msg or "Permission" in error_msg or "denied" in error_msg:
                 print(f"❌ Push failed: Permission denied")
                 print(f"\n💡 This usually means:")
                 print(f"   • You don't have write access to the repository")

@@ -599,8 +599,11 @@ class TurboaliasCLI:
         # Background sync - don't block the user
         try:
             import threading
-            thread = threading.Thread(target=self.git_sync.auto_sync_if_enabled, daemon=True)
+            thread = threading.Thread(target=self.git_sync.auto_sync_if_enabled, daemon=False)
             thread.start()
+            # Give the thread a moment to complete, but don't wait forever
+            # This ensures sync happens but doesn't block user if network is slow
+            thread.join(timeout=2.0)
         except Exception:
             # Silently fail - don't interrupt user's workflow
             pass
