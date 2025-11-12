@@ -57,17 +57,15 @@ python3 -m pipx ensurepath
 pipx install turboalias
 ```
 
-> **Note:** This method works on Linux, macOS, and Windows (via WSL). Modern Linux distributions discourage system-wide `pip install` without virtual environments (PEP 668). `pipx` is the recommended way to install Python CLI applications as it automatically manages isolated environments.
+### Alternative 
 
-### Alternative: pip with virtual environment
-
-If you prefer using pip, use a virtual environment:
+If you prefer using pip:
 
 ```bash
-python3 -m venv ~/.venvs/turboalias
-source ~/.venvs/turboalias/bin/activate
 pip install turboalias
 ```
+
+> **Note:** Modern Linux distributions discourage system-wide `pip install` without virtual environments (PEP 668). `pipx` is the recommended way to install Python CLI applications as it automatically manages isolated environments.
 
 ### From source
 

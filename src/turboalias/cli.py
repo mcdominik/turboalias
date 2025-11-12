@@ -20,6 +20,21 @@ class TurboaliasCLI:
         self.config = Config()
         self.shell = ShellIntegration(self.config)
         self.git_sync = GitSync(self.config)
+        self._check_sync_errors()
+
+    def _check_sync_errors(self):
+        """Check for recent sync errors and warn user"""
+        if not self.git_sync.is_git_initialized():
+            return
+        
+        sync_config = self.git_sync.load_sync_config()
+        if "last_error" in sync_config:
+            error_info = sync_config["last_error"]
+            print(f"⚠️  Auto-sync is failing: {error_info.get('message', 'Unknown error')}")
+            print(f"   Last failed: {error_info.get('timestamp', 'Unknown time')}")
+            print(f"   Run 'turboalias sync status' for details")
+            print(f"   Run 'turboalias sync check' to diagnose the issue")
+            print()
 
     def init(self):
         """Initialize turboalias"""
@@ -404,8 +419,22 @@ class TurboaliasCLI:
         auto_sync = sync_config.get("auto_sync", False)
         print(f"   Auto-sync: {'✓ Enabled' if auto_sync else '○ Disabled'}")
         
+        # Show last error if any
+        if "last_error" in status:
+            error_info = status["last_error"]
+            print(f"\n⚠️  Last sync error:")
+            print(f"   Operation: {error_info.get('operation', 'Unknown')}")
+            print(f"   Message: {error_info.get('message', 'Unknown error')}")
+            print(f"   Time: {error_info.get('timestamp', 'Unknown')}")
+            print(f"\n💡 Run 'turboalias sync check' to diagnose")
+            print(f"   View detailed logs: cat {self.git_sync.error_log_file}")
+        
         if status.get("error"):
             print(f"\n⚠️  {status['error']}")
+        
+        if status.get("fetch_error"):
+            print(f"\n⚠️  Cannot reach remote: {status['fetch_error']}")
+            print(f"   Run 'turboalias sync check' to diagnose")
         
         return 0
 
@@ -427,6 +456,136 @@ class TurboaliasCLI:
             print("💡 Use 'turboalias sync push' to manually sync")
         
         return 0
+
+    def sync_check(self):
+        """Check sync connectivity and diagnose issues"""
+        if not self.git_sync.is_git_initialized():
+            print("❌ Git sync not initialized")
+            print("\n💡 Get started:")
+            print("   turboalias sync init [--remote <url>]")
+            return 1
+        
+        print("🔍 Checking sync connectivity...")
+        print()
+        
+        results = self.git_sync.check_connectivity()
+        
+        if "error" in results:
+            print(f"❌ {results['error']}")
+            return 1
+        
+        print(f"Remote: {results.get('remote_url')}")
+        print(f"Branch: {results.get('branch')}")
+        print()
+        
+        # Display check results
+        all_passed = True
+        for check_name, check_result in results.get("checks", {}).items():
+            status = check_result.get("status")
+            
+            if status == "pass":
+                print(f"✓ {check_result.get('message')}")
+                if "notes" in check_result:
+                    for note in check_result["notes"]:
+                        print(f"  ℹ️  {note}")
+                if "warning" in check_result:
+                    print(f"  ⚠️  {check_result['warning']}")
+            elif status == "fail":
+                all_passed = False
+                print(f"✗ {check_result.get('message')}")
+                if "diagnosis" in check_result:
+                    print(f"  Diagnosis: {check_result['diagnosis']}")
+                if "help" in check_result:
+                    print(f"  How to fix:")
+                    for help_item in check_result["help"]:
+                        print(f"    • {help_item}")
+                if "error" in check_result:
+                    print(f"  Error: {check_result['error']}")
+            elif status == "info":
+                print(f"ℹ️  {check_result.get('message')}")
+                if "notes" in check_result:
+                    for note in check_result["notes"]:
+                        print(f"  • {note}")
+            elif status == "error":
+                print(f"⚠️  {check_result.get('message')}")
+            
+            print()
+        
+        if all_passed:
+            print("✨ All checks passed! Sync should work correctly.")
+            return 0
+        else:
+            print("❌ Some checks failed. Please fix the issues above.")
+            print(f"\n📝 Detailed logs: cat {self.git_sync.error_log_file}")
+            return 1
+
+    def _try_auto_sync(self):
+        """Check sync connectivity and diagnose issues"""
+        if not self.git_sync.is_git_initialized():
+            print("❌ Git sync not initialized. Run: turboalias sync init")
+            return 1
+        
+        print("🔍 Checking sync connectivity...\n")
+        
+        results = self.git_sync.check_connectivity()
+        
+        if "error" in results:
+            print(f"❌ {results['error']}")
+            return 1
+        
+        print(f"Remote: {results['remote_url']}")
+        print(f"Branch: {results['branch']}\n")
+        
+        # Display check results
+        checks = results.get("checks", {})
+        all_passed = True
+        
+        for check_name, check_result in checks.items():
+            status = check_result.get("status", "unknown")
+            message = check_result.get("message", "")
+            
+            if status == "pass":
+                print(f"✓ {message}")
+            elif status == "fail":
+                print(f"❌ {message}")
+                all_passed = False
+            elif status == "info":
+                print(f"ℹ️  {message}")
+            elif status == "error":
+                print(f"⚠️  {message}")
+            
+            # Show notes if any
+            if "notes" in check_result:
+                for note in check_result["notes"]:
+                    print(f"   • {note}")
+            
+            # Show warning if any
+            if "warning" in check_result:
+                print(f"   ⚠️  {check_result['warning']}")
+            
+            # Show help if any
+            if "help" in check_result:
+                print(f"   💡 Suggestions:")
+                for help_text in check_result["help"]:
+                    print(f"      - {help_text}")
+            
+            # Show diagnosis if any
+            if "diagnosis" in check_result:
+                print(f"   🔍 Diagnosis: {check_result['diagnosis']}")
+            
+            # Show error details if any
+            if "error" in check_result:
+                print(f"   Error: {check_result['error']}")
+            
+            print()
+        
+        if all_passed:
+            print("✨ All checks passed! Sync should work correctly.")
+            return 0
+        else:
+            print("⚠️  Some checks failed. Please address the issues above.")
+            print(f"📝 Detailed logs: {self.git_sync.error_log_file}")
+            return 1
 
     def _try_auto_sync(self):
         """Attempt background auto-sync if enabled"""
@@ -545,6 +704,7 @@ def main():
             turboalias sync pull                            Pull changes from remote
             turboalias sync status                          Check sync status
             turboalias sync auto on                         Enable auto-sync
+            turboalias sync check                           Diagnose sync issues
 
             💡 Tip: Changes apply instantly - no shell reload needed!
 
@@ -659,6 +819,11 @@ def main():
     )
     sync_auto_parser.add_argument('mode', choices=['on', 'off'], help='Enable or disable auto-sync')
 
+    sync_subparsers.add_parser(
+        'check',
+        help='Check connectivity and diagnose sync issues'
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -696,6 +861,7 @@ def main():
                 print("   turboalias sync pull")
                 print("   turboalias sync status")
                 print("   turboalias sync auto on|off")
+                print("   turboalias sync check")
                 return 1
             
             if args.sync_command == 'init':
@@ -710,6 +876,8 @@ def main():
                 return cli.sync_status()
             elif args.sync_command == 'auto':
                 return cli.sync_auto(args.mode == 'on')
+            elif args.sync_command == 'check':
+                return cli.sync_check()
     except KeyboardInterrupt:
         print("\n\nCancelled")
         return 130
